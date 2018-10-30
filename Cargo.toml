@@ -1,0 +1,15 @@
+[package]
+name = "mvr"
+version = "0.1.0"
+authors = ["Juici <juicy66173@gmail.com>"]
+description = "A utility program for renaming files"
+
+homepage = "https://github.com/Juici/mvr"
+repository = "https://github.com/Juici/mvr"
+readme = "README.md"
+license = "MIT"
+
+keywords = ["rename", "move", "regex", "bulk"]
+categories = []
+
+include = ["Cargo.toml", "build.rs", "src/**/*.rs", "README.md", "LICENSE"]
