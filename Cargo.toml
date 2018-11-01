@@ -1,6 +1,6 @@
 [package]
 name = "mvr"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Juici <juicy66173@gmail.com>"]
 description = "A utility program for renaming files."
 
@@ -9,12 +9,13 @@ repository = "https://github.com/Juici/mvr"
 readme = "README.md"
 license = "MIT"
 
-keywords = ["rename", "move", "regex", "bulk"]
-categories = []
+keywords = ["rename", "move", "regex", "bulk", "file"]
+categories = ["command-line-utilities", "filesystem"]
 
 include = ["Cargo.toml", "build.rs", "src/**/*.rs", "README.md", "LICENSE"]
 
 [dependencies]
 clap = "2.32.0"
 failure = "0.1.3"
+glob = "0.2.11"
 regex = "1.0.5"
