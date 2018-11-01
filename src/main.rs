@@ -1,6 +1,7 @@
 extern crate clap;
 #[macro_use]
 extern crate failure;
+extern crate glob;
 extern crate regex;
 
 use std::io::{self, Write};
@@ -18,6 +19,11 @@ struct Settings {
     interactive: bool,
     no_clobber: bool,
     verbose: bool,
+}
+
+struct Repl<'a> {
+    expr: Regex,
+    repl: &'a str,
 }
 
 fn cli() -> clap::App<'static, 'static> {
@@ -104,6 +110,66 @@ fn getch() -> Fallible<Option<char>> {
     Ok(s.chars().next())
 }
 
+fn rename_file<P: AsRef<Path>>(path: P, settings: &Settings, repl: &Repl) -> Fallible<()> {
+    let path = path.as_ref();
+    if !path.exists() {
+        return Ok(());
+    }
+
+    let expr = &repl.expr;
+    let repl = repl.repl;
+
+    let file_name = match path.file_name().and_then(|s| s.to_str()) {
+        Some(file_name) => file_name,
+        None => bail!("could not get file name: {}", path.display()),
+    };
+
+    if let Some(captures) = expr.captures(file_name) {
+        let mut out = String::with_capacity(file_name.len());
+        captures.expand(repl, &mut out);
+
+        let new_path = path.with_file_name(out);
+
+        if settings.interactive || (!settings.no_clobber && !settings.force && new_path.exists()) {
+            print!("{} -> {}: ", path.display(), new_path.display());
+            if let Err(_) = io::stdout().flush() {
+                bail!("could not flush stdout");
+            }
+
+            match getch()? {
+                Some(ch) if ch == 'Y' || ch == 'y' => (),
+                _ => return Ok(()),
+            }
+        } else if settings.dry || settings.verbose {
+            println!("{} -> {}", path.display(), new_path.display());
+        }
+
+        if settings.dry || settings.no_clobber && new_path.exists() {
+            return Ok(());
+        }
+
+        if settings.copy {
+            if let Err(_) = fs::copy(&path, &new_path) {
+                bail!(
+                    "could not copy file: {} -> {}",
+                    path.display(),
+                    new_path.display()
+                );
+            }
+        } else {
+            if let Err(_) = fs::rename(&path, &new_path) {
+                bail!(
+                    "could not rename file: {} -> {}",
+                    path.display(),
+                    new_path.display()
+                );
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn run() -> Fallible<()> {
     let matches = cli().get_matches();
 
@@ -119,22 +185,18 @@ fn run() -> Fallible<()> {
     }
 
     let mut settings = Settings {
-        dry: false,
-        copy: false,
-        force: false,
+        dry: matches.is_present("dry"),
+        copy: matches.is_present("copy"),
+        force: matches.is_present("force"),
         interactive: false,
         no_clobber: false,
-        verbose: false,
+        verbose: matches.is_present("verbose"),
     };
 
-    settings.dry = matches.is_present("dry");
-    settings.copy = matches.is_present("copy");
-    settings.force = matches.is_present("force");
     if !settings.force {
         settings.interactive = matches.is_present("interactive");
         settings.no_clobber = matches.is_present("no-clobber");
     }
-    settings.verbose = matches.is_present("verbose");
 
     let expr = matches.value_of("expression").unwrap();
     let repl = matches.value_of("replacement").unwrap();
@@ -142,58 +204,19 @@ fn run() -> Fallible<()> {
 
     let expr = Regex::new(expr)?;
 
+    let repl = Repl { expr, repl };
+
     for file in files {
-        let path = Path::new(file);
-
-        let file_name = match path.file_name().and_then(|s| s.to_str()) {
-            Some(file_name) => file_name,
-            None => bail!("could not get file name: {}", path.display()),
+        match glob::glob(file) {
+            Ok(paths) => {
+                for path in paths {
+                    if let Ok(path) = path {
+                        rename_file(&path, &settings, &repl)?;
+                    }
+                }
+            }
+            Err(_) => rename_file(file, &settings, &repl)?,
         };
-
-        if let Some(captures) = expr.captures(file_name) {
-            let mut out = String::with_capacity(file_name.len());
-            captures.expand(repl, &mut out);
-
-            let new_path = path.with_file_name(out);
-
-            if settings.interactive
-                || (!settings.no_clobber && !settings.force && new_path.exists())
-            {
-                print!("{} -> {}: ", path.display(), new_path.display());
-                if let Err(_) = io::stdout().flush() {
-                    bail!("could not flush stdout");
-                }
-
-                match getch()? {
-                    Some(ch) if ch == 'Y' || ch == 'y' => (),
-                    _ => continue,
-                }
-            } else if settings.dry || settings.verbose {
-                println!("{} -> {}", path.display(), new_path.display());
-            }
-
-            if settings.dry || settings.no_clobber && new_path.exists() {
-                continue;
-            }
-
-            if settings.copy {
-                if let Err(_) = fs::copy(path, &new_path) {
-                    bail!(
-                        "could not copy file: {} -> {}",
-                        path.display(),
-                        new_path.display()
-                    );
-                }
-            } else {
-                if let Err(_) = fs::rename(path, &new_path) {
-                    bail!(
-                        "could not rename file: {} -> {}",
-                        path.display(),
-                        new_path.display()
-                    );
-                }
-            }
-        }
     }
 
     Ok(())
