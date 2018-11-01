@@ -9,8 +9,8 @@ repository = "https://github.com/Juici/mvr"
 readme = "README.md"
 license = "MIT"
 
-keywords = ["rename", "move", "regex", "bulk"]
-categories = []
+keywords = ["rename", "move", "regex", "bulk", "file"]
+categories = ["command-line-utilities", "filesystem"]
 
 include = ["Cargo.toml", "build.rs", "src/**/*.rs", "README.md", "LICENSE"]
 
