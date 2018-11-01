@@ -1,6 +1,7 @@
 extern crate clap;
 #[macro_use]
 extern crate failure;
+extern crate glob;
 extern crate regex;
 
 use std::io::{self, Write};
@@ -111,8 +112,11 @@ fn getch() -> Fallible<Option<char>> {
 
 fn rename_file<P: AsRef<Path>>(path: P, settings: &Settings, repl: &Repl) -> Fallible<()> {
     let path = path.as_ref();
+    if !path.exists() {
+        return Ok(());
+    }
 
-    let expr = repl.expr;
+    let expr = &repl.expr;
     let repl = repl.repl;
 
     let file_name = match path.file_name().and_then(|s| s.to_str()) {
@@ -203,7 +207,16 @@ fn run() -> Fallible<()> {
     let repl = Repl { expr, repl };
 
     for file in files {
-        rename_file(file, &settings, &repl)?;
+        match glob::glob(file) {
+            Ok(paths) => {
+                for path in paths {
+                    if let Ok(path) = path {
+                        rename_file(&path, &settings, &repl)?;
+                    }
+                }
+            }
+            Err(_) => rename_file(file, &settings, &repl)?,
+        };
     }
 
     Ok(())
