@@ -82,7 +82,7 @@ fn cli() -> clap::App<'static, 'static> {
         )
         // Args.
         .arg(
-            Arg::with_name( "expression")
+            Arg::with_name("expression")
                 .required_unless("completions")
                 .value_name("EXPRESSION")
                 .help("File matching expression using regex"),
