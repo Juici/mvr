@@ -1,5 +1,9 @@
 # mvr
 
+[![Travis Build Status](https://api.travis-ci.org/Juici/mvr.svg?branch=master)](https://travis-ci.org/Juici/mvr)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![crates.io](https://img.shields.io/crates/v/mvr.svg)](https://crates.io/crates/mvr)
+
 **A utility program for renaming files.**
 
 This program is a utility for renaming files using regex pattern matching.
