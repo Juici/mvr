@@ -1,0 +1,18 @@
+language: rust
+matrix:
+  fast_finish: true
+  include:
+    - rust: nightly
+    - rust: beta
+    - rust: stable
+
+script:
+  - cargo build --release
+  - cargo test --release
+
+cache:
+  cargo: true
+
+env:
+  global:
+    - RUST_BACKTRACE=1
