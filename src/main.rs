@@ -76,7 +76,7 @@ fn cli() -> clap::App<'static, 'static> {
         .arg(
             Arg::with_name("completions")
                 .long("completions")
-                .help("Generate completions for the shell")
+                .help("Generate completion scripts for your shell")
                 .takes_value(true)
                 .possible_values(&Shell::variants())
         )
