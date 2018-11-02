@@ -5,14 +5,15 @@
 This program is a utility for renaming files using regex pattern matching.
 
 
-#### Features
+### Features
 
 - Regex pattern matching and replacement strings
 - Bulk file renaming
 - Perform a dry run before renaming
 - Prompt on file renaming
 
-#### Install
+
+## Install
 
 From crates.io:
 ```
@@ -27,7 +28,7 @@ $ cargo install --path=./
 ```
 
 
-#### Build
+## Build
 
 ```
 $ git clone https://github.com/Juici/mvr
