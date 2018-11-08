@@ -82,7 +82,7 @@ fn cli() -> clap::App<'static, 'static> {
         )
         // Args.
         .arg(
-            Arg::with_name( "expression")
+            Arg::with_name("expression")
                 .required_unless("completions")
                 .value_name("EXPRESSION")
                 .help("File matching expression using regex"),
@@ -144,7 +144,7 @@ fn rename_file<P: AsRef<Path>>(path: P, settings: &Settings, repl: &Repl) -> Fal
             println!("{} -> {}", path.display(), new_path.display());
         }
 
-        if settings.dry || settings.no_clobber && new_path.exists() {
+        if settings.dry || (settings.no_clobber && new_path.exists()) {
             return Ok(());
         }
 
@@ -207,15 +207,17 @@ fn run() -> Fallible<()> {
     let repl = Repl { expr, repl };
 
     for file in files {
-        match glob::glob(file) {
-            Ok(paths) => {
+        match glob::glob(file).map(|paths| paths.collect::<Vec<_>>()) {
+            Ok(ref paths) if !paths.is_empty() => {
                 for path in paths {
                     if let Ok(path) = path {
                         rename_file(&path, &settings, &repl)?;
                     }
                 }
             }
-            Err(_) => rename_file(file, &settings, &repl)?,
+            _ => {
+                rename_file(file, &settings, &repl)?;
+            }
         };
     }
 
